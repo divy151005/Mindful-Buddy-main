@@ -1,0 +1,131 @@
+{
+  "childProfiles": [
+    {
+      "id": "profile_1",
+      "name": "Alex",
+      "age": 5,
+      "dateOfBirth": "2021-03-15",
+      "gender": "male",
+      "parentName": "Parent Name",
+      "parentEmail": "parent@example.com",
+      "createdAt": "2026-01-19T10:44:58.681Z",
+      "updatedAt": "2026-01-19T10:44:58.681Z"
+    }
+  ],
+  "assessmentResults": [],
+  "gameResults": [],
+  "moodEntries": [
+    {
+      "id": "mood_1",
+      "childId": "profile_1",
+      "mood": "okay",
+      "date": "2026-01-09",
+      "createdAt": "2026-01-19T10:44:58.681Z"
+    },
+    {
+      "id": "mood_2",
+      "childId": "profile_1",
+      "mood": "happy",
+      "date": "2026-01-10",
+      "createdAt": "2026-01-19T10:44:58.681Z"
+    },
+    {
+      "id": "mood_3",
+      "childId": "profile_1",
+      "mood": "calm",
+      "date": "2026-01-11",
+      "createdAt": "2026-01-19T10:44:58.681Z"
+    },
+    {
+      "id": "mood_4",
+      "childId": "profile_1",
+      "mood": "happy",
+      "date": "2026-01-12",
+      "createdAt": "2026-01-19T10:44:58.681Z"
+    },
+    {
+      "id": "mood_5",
+      "childId": "profile_1",
+      "mood": "excited",
+      "date": "2026-01-13",
+      "createdAt": "2026-01-19T10:44:58.681Z"
+    },
+    {
+      "id": "mood_6",
+      "childId": "profile_1",
+      "mood": "excited",
+      "date": "2026-01-14",
+      "createdAt": "2026-01-19T10:44:58.681Z"
+    },
+    {
+      "id": "mood_7",
+      "childId": "profile_1",
+      "mood": "happy",
+      "date": "2026-01-15",
+      "createdAt": "2026-01-19T10:44:58.681Z"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "session_1",
+      "childId": "profile_1",
+      "type": "assessment",
+      "duration": 30,
+      "completedAt": "2026-01-19T10:44:58.681Z",
+      "createdAt": "2026-01-19T10:44:58.681Z"
+    }
+  ],
+  "copingSkills": [
+    {
+      "id": "skill_1",
+      "childId": "profile_1",
+      "skill": "deep breathing",
+      "category": "breathing",
+      "effectiveness": 4,
+      "createdAt": "2026-01-19T10:44:58.681Z"
+    },
+    {
+      "id": "skill_2",
+      "childId": "profile_1",
+      "skill": "counting to 10",
+      "category": "cognitive",
+      "effectiveness": 5,
+      "createdAt": "2026-01-19T10:44:58.681Z"
+    },
+    {
+      "id": "skill_3",
+      "childId": "profile_1",
+      "skill": "talking about feelings",
+      "category": "emotional",
+      "effectiveness": 4,
+      "createdAt": "2026-01-19T10:44:58.681Z"
+    },
+    {
+      "id": "skill_4",
+      "childId": "profile_1",
+      "skill": "drawing emotions",
+      "category": "creative",
+      "effectiveness": 3,
+      "createdAt": "2026-01-19T10:44:58.681Z"
+    },
+    {
+      "id": "skill_5",
+      "childId": "profile_1",
+      "skill": "physical activity",
+      "category": "physical",
+      "effectiveness": 5,
+      "createdAt": "2026-01-19T10:44:58.681Z"
+    }
+  ],
+  "iqTestResults": [],
+  "mchatResults": [],
+  "progressTracking": [],
+  "iqGameSessions": [],
+  "mchatVisualSessions": [],
+  "conversationalSessions": [],
+  "parentTeacherFeedback": [],
+  "neuropsychologicalResults": [],
+  "developmentScreenings": [],
+  "psychiatricEvaluations": [],
+  "progressAnalytics": []
+}

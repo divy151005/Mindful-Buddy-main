@@ -1,0 +1,451 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { dataStore } from '@/lib/data-store';
+import type { ConversationalSession, ChatMessage } from '@/lib/data-store';
+
+// Session types
+export type SessionType = 'triage' | 'check-in' | 'breathing' | 'grounding';
+export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+export type Sentiment = 'positive' | 'neutral' | 'concerning' | 'alert';
+
+// Intent categories for message classification
+const INTENT_PATTERNS: Record<string, RegExp[]> = {
+  'sadness': [/sad/i, /unhappy/i, /crying/i, /tears/i, /depressed/i, /down/i, /blue/i],
+  'anxiety': [/worried/i, /scared/i, /nervous/i, /afraid/i, /anxious/i, /panic/i, /fear/i],
+  'anger': [/angry/i, /mad/i, /frustrated/i, /annoyed/i, /furious/i, /upset/i],
+  'fear': [/scared/i, /afraid/i, /terrified/i, /horrified/i, /nightmare/i],
+  'loneliness': [/alone/i, /lonely/i, /isolated/i, /no friends/i, /nobody/i],
+  'academic': [/school/i, /homework/i, /teacher/i, /grades/i, /test/i, /learning/i],
+  'social': [/friends/i, /bullying/i, /teased/i, /left out/i, /social/i, /play/i],
+  'family': [/parents/i, /mom/i, /dad/i, /siblings/i, /family/i, /home/i],
+  'physical': [/hurt/i, /pain/i, /sick/i, /tired/i, /headache/i, /stomach/i],
+  'sleep': [/sleep/i, /night/i, /dreams/i, /insomnia/i, /bed/i],
+  'self-harm': [/hurt myself/i, /cut/i, /injure/i, /end it/i, /give up/i, /not worth/i],
+  'coping-request': [/help/i, /what can i do/i, /calm down/i, /feel better/i, /techniques/i],
+  'breathing': [/breath/i, /inhale/i, /exhale/i, /deep breath/i],
+  'grounding': [/here/i, /present/i, /safe/i, /ground/i, /5-4-3-2-1/i],
+  'positive': [/happy/i, /good/i, /great/i, /excited/i, /fun/i, /love/i, /enjoy/i],
+  'gratitude': [/thank/i, /grateful/i, /appreciate/i, /blessed/i],
+  'curiosity': [/why/i, /how/i, /what is/i, /explain/i, /wonder/i],
+};
+
+// Response templates for different intents
+const RESPONSE_TEMPLATES: Record<string, string[]> = {
+  'sadness': [
+    "I hear that you're feeling sad. It's okay to feel that way sometimes. Would you like to talk about what's making you feel this way?",
+    "Feeling sad is a normal emotion. I'm here to listen. What's on your mind?",
+    "I'm sorry you're feeling down. Sometimes talking about it can help. What triggered these feelings?",
+  ],
+  'anxiety': [
+    "It sounds like you're feeling worried or anxious. Let's try some calming techniques together. Would you like to practice deep breathing?",
+    "Anxiety can feel overwhelming, but there are ways to manage it. Would it help if we did a breathing exercise?",
+    "I understand you're feeling nervous. Remember, it's okay to take things one step at a time.",
+  ],
+  'anger': [
+    "It seems like you're feeling frustrated or angry. That's a natural emotion. Let's take a moment to cool down together.",
+    "Anger is a valid feeling. Would you like to try some ways to express it safely?",
+    "I can hear that you're upset. Let's try some breathing to help you feel calmer.",
+  ],
+  'fear': [
+    "It sounds like something is making you feel scared. You're safe here. Do you want to talk about it?",
+    "Fear can be scary, but we can work through it together. What's worrying you?",
+    "I'm here to help you feel safe. Would you like to try a grounding exercise?",
+  ],
+  'loneliness': [
+    "Feeling lonely is tough. Remember, you're not alone - you have people who care about you. Who makes you feel happy?",
+    "Everyone feels lonely sometimes. Would you like to talk about how to connect with others?",
+    "I'm here with you right now. What are some things you enjoy doing?",
+  ],
+  'academic': [
+    "School can be challenging sometimes. What specific subjects or situations are making it hard?",
+    "It's normal to feel stressed about school. Let's think of some strategies to help.",
+    "Would it help to talk about what's going on at school?",
+  ],
+  'social': [
+    "Social situations can be tricky. What's happening with your friends?",
+    "I understand social things can be confusing. Do you want to talk about it?",
+    "Remember, you deserve to be treated with kindness. What's going on?",
+  ],
+  'family': [
+    "Family can be complicated. What's happening at home?",
+    "I'm here to listen about anything going on with your family.",
+    "Family relationships aren't always easy. What would help you feel better?",
+  ],
+  'physical': [
+    "I hear that you're not feeling well physically. It's important to tell a trusted adult about this.",
+    "If you're in pain or don't feel good, please let a parent or doctor know.",
+    "Physical sensations can affect our mood. Is there something specific bothering you?",
+  ],
+  'sleep': [
+    "Sleep is really important for feeling good. Are you having trouble sleeping?",
+    "Bad dreams can be scary. Would you like some tips for better sleep?",
+    "Let's think about what might help you get better rest.",
+  ],
+  'self-harm': [
+    "I'm really glad you talked to me. What you're feeling is important, and there are people who want to help.",
+    "It sounds like you're going through a really hard time. Please tell a trusted adult - a parent, counselor, or teacher - how you're feeling.",
+    "You matter, and your feelings are important. Let's make sure you get the support you need.",
+  ],
+  'coping-request': [
+    "I'd be happy to help you feel better! Let's try a breathing exercise together.",
+    "Here are some things that might help: deep breathing, counting to 10, or talking to someone you trust.",
+    "Let's practice some calming techniques. Would you like to try the 5-4-3-2-1 grounding exercise?",
+  ],
+  'breathing': [
+    "Great idea! Let's do a breathing exercise together. Breathe in slowly for 4 counts, hold for 4, and breathe out for 4.",
+    "Let's try box breathing: In for 4, hold for 4, out for 4, hold for 4. Ready?",
+    "Deep breathing helps calm our bodies. Let's try it together.",
+  ],
+  'grounding': [
+    "The 5-4-3-2-1 exercise can help you feel more present. Can you name 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, and 1 you can taste?",
+    "Grounding helps us feel safe. Let's focus on what you can feel, see, and hear right now.",
+    "Let's do this together: Name 5 things around you, 4 things you can touch, 3 sounds you hear...",
+  ],
+  'positive': [
+    "That's wonderful to hear! What made you feel this way?",
+    "I'm so glad you're feeling good! What are you enjoying?",
+    "Positive feelings are great! Tell me more about what's making you happy.",
+  ],
+  'gratitude': [
+    "That's a beautiful attitude! What are you grateful for?",
+    "Gratitude is a wonderful practice. What positives are in your life?",
+    "It's great to appreciate the good things. What brightens your day?",
+  ],
+  'curiosity': [
+    "That's a great question! What would you like to know more about?",
+    "I'm happy to explore this with you. Tell me more about what you're wondering.",
+    "Curiosity helps us learn! What interests you about this?",
+  ],
+};
+
+// Coping skills database
+const COPING_SKILLS = {
+  breathing: [
+    { name: 'Box Breathing', description: 'In for 4, hold for 4, out for 4, hold for 4', duration: '2 minutes' },
+    { name: '4-7-8 Breathing', description: 'In for 4, hold for 7, out for 8', duration: '2 minutes' },
+    { name: 'Balloon Breathing', description: 'Pretend to inflate a balloon with slow deep breaths', duration: '1 minute' },
+  ],
+  grounding: [
+    { name: '5-4-3-2-1', description: 'Name 5 things you see, 4 you feel, 3 you hear, 2 you smell, 1 you taste', duration: '3 minutes' },
+    { name: 'Safe Place Visualization', description: 'Imagine a place where you feel completely safe and calm', duration: '5 minutes' },
+    { name: 'Object Focus', description: 'Hold an object and focus on its texture, weight, temperature', duration: '2 minutes' },
+  ],
+  cognitive: [
+    { name: 'Positive Self-Talk', description: 'Replace negative thoughts with kind, encouraging ones', duration: 'Ongoing' },
+    { name: 'Gratitude List', description: 'Write or think of 3 things you\'re grateful for', duration: '2 minutes' },
+    { name: 'Problem Solving', description: 'Break down a problem into small, manageable steps', duration: '5 minutes' },
+  ],
+  physical: [
+    { name: 'Stretching', description: 'Gently stretch your arms, legs, and neck', duration: '3 minutes' },
+    { name: 'Exercise', description: 'Do some jumping jacks, running in place, or dancing', duration: '5 minutes' },
+    { name: 'Progressive Relaxation', description: 'Tense and release each muscle group starting from your toes', duration: '5 minutes' },
+  ],
+  creative: [
+    { name: 'Drawing', description: 'Express your feelings through drawing or coloring', duration: '10 minutes' },
+    { name: 'Writing', description: 'Write about how you\'re feeling in a journal', duration: '10 minutes' },
+    { name: 'Music', description: 'Listen to calming music or play an instrument', duration: '5 minutes' },
+  ],
+};
+
+// Detect intent from message
+function detectIntent(message: string): string {
+  const lowerMessage = message.toLowerCase();
+  
+  // Check self-harm first (highest priority)
+  for (const pattern of INTENT_PATTERNS['self-harm']) {
+    if (pattern.test(lowerMessage)) {
+      return 'self-harm';
+    }
+  }
+  
+  // Check other intents
+  for (const [intent, patterns] of Object.entries(INTENT_PATTERNS)) {
+    if (intent === 'self-harm') continue;
+    for (const pattern of patterns) {
+      if (pattern.test(lowerMessage)) {
+        return intent;
+      }
+    }
+  }
+  
+  return 'general';
+}
+
+// Detect sentiment from message
+function detectSentiment(message: string): Sentiment {
+  const lowerMessage = message.toLowerCase();
+  
+  // Alert indicators
+  const alertPatterns = [/want to die/i, /hurt myself/i, /end it all/i, /better off dead/i, /not worth living/i];
+  if (alertPatterns.some(p => p.test(lowerMessage))) {
+    return 'alert';
+  }
+  
+  // Concerning indicators
+  const concerningPatterns = [/sad/i, /depressed/i, /lonely/i, /hopeless/i, /worthless/i, /anxious/i, /scared/i];
+  if (concerningPatterns.some(p => p.test(lowerMessage))) {
+    return 'concerning';
+  }
+  
+  // Positive indicators
+  const positivePatterns = [/happy/i, /good/i, /great/i, /excited/i, /love/i, /fun/i];
+  if (positivePatterns.some(p => p.test(lowerMessage))) {
+    return 'positive';
+  }
+  
+  return 'neutral';
+}
+
+// Generate response based on intent and conversation context
+function generateResponse(
+  intent: string,
+  session: ConversationalSession,
+  messageCount: number
+): { content: string; sentiment: Sentiment; intent: string } {
+  // Handle self-harm intent (escalation required)
+  if (intent === 'self-harm') {
+    return {
+      content: "I'm really concerned about what you just said. Your feelings are important, and I want to make sure you get the right support. Would you be able to talk to a trusted adult right now - like a parent, teacher, or school counselor? They can help connect you with someone who specializes in supporting kids through difficult feelings.",
+      sentiment: 'alert',
+      intent: 'self-harm-escalation',
+    };
+  }
+  
+  // Generate response based on intent
+  const templates = RESPONSE_TEMPLATES[intent] || RESPONSE_TEMPLATES['sadness'];
+  const content = templates[Math.floor(Math.random() * templates.length)];
+  
+  // Add coping skill if requested
+  if (intent === 'coping-request') {
+    const category = messageCount < 3 ? 'breathing' : Object.keys(COPING_SKILLS)[Math.floor(Math.random() * Object.keys(COPING_SKILLS).length)];
+    const skill = COPING_SKILLS[category as keyof typeof COPING_SKILLS][0];
+    return {
+      content: `${content}\n\nHere's a ${skill.name} exercise (${skill.duration}): ${skill.description}`,
+      sentiment: 'neutral',
+      intent,
+    };
+  }
+  
+  // Add follow-up question after initial responses
+  if (messageCount === 1 && !['breathing', 'grounding', 'positive'].includes(intent)) {
+    return {
+      content: `${content}\n\nWould you like to tell me more about that?`,
+      sentiment: detectSentiment(content),
+      intent,
+    };
+  }
+  
+  return {
+    content,
+    sentiment: detectSentiment(content),
+    intent,
+  };
+}
+
+// Determine risk level based on conversation
+function determineRiskLevel(messages: ChatMessage[]): RiskLevel {
+  const alertMessages = messages.filter(m => m.sentiment === 'alert');
+  const concerningMessages = messages.filter(m => m.sentiment === 'concerning');
+  
+  if (alertMessages.length > 0) {
+    return 'critical';
+  }
+  
+  if (concerningMessages.length >= 3) {
+    return 'high';
+  }
+  
+  if (concerningMessages.length >= 1) {
+    return 'medium';
+  }
+  
+  return 'low';
+}
+
+// GET /api/conversational-agent - Get conversational sessions
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const childId = searchParams.get('childId');
+    const sessionType = searchParams.get('sessionType') as SessionType | null;
+    const active = searchParams.get('active');
+
+    let sessions = dataStore.getConversationalSessions(childId || undefined);
+
+    if (sessionType) {
+      sessions = sessions.filter(s => s.sessionType === sessionType);
+    }
+
+    if (active === 'true') {
+      sessions = sessions.filter(s => !s.completedAt);
+    }
+
+    return NextResponse.json(sessions);
+  } catch (error) {
+    console.error('Error fetching conversational sessions:', error);
+    return NextResponse.json({ error: 'Failed to fetch conversational sessions' }, { status: 500 });
+  }
+}
+
+// POST /api/conversational-agent - Create new session or send message
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { childId, sessionId, sessionType, message, context } = body;
+
+    // Create new session
+    if (!sessionId && childId && sessionType) {
+      const newSession = dataStore.createConversationalSession({
+        childId,
+        sessionType,
+        messages: [],
+        context: context || { moodState: 'unknown' },
+        currentRiskLevel: 'low',
+        escalationNeeded: false,
+        topicsDiscussed: [],
+        copingSkillsOffered: [],
+        parentNotified: false,
+        startedAt: new Date().toISOString(),
+      });
+
+      // Add system message
+      const systemMessage: Omit<ChatMessage, 'id' | 'timestamp'> = {
+        role: 'system',
+        content: getWelcomeMessage(sessionType),
+        intent: 'welcome',
+        sentiment: 'positive',
+      };
+      dataStore.addMessageToSession(newSession.id, systemMessage);
+
+      // Add initial assistant message
+      const introMessage: Omit<ChatMessage, 'id' | 'timestamp'> = {
+        role: 'assistant',
+        content: getIntroMessage(sessionType),
+        intent: 'introduction',
+        sentiment: 'positive',
+      };
+      dataStore.addMessageToSession(newSession.id, introMessage);
+
+      return NextResponse.json({
+        session: { ...newSession, messages: [systemMessage, introMessage] },
+      }, { status: 201 });
+    }
+
+    // Send message to existing session
+    if (sessionId && message) {
+      const session = dataStore.getConversationalSessions().find(s => s.id === sessionId);
+      
+      if (!session) {
+        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+      }
+
+      // Add user message
+      const userIntent = detectIntent(message);
+      const userSentiment = detectSentiment(message);
+      
+      const userMessage: Omit<ChatMessage, 'id' | 'timestamp'> = {
+        role: 'user',
+        content: message,
+        intent: userIntent,
+        sentiment: userSentiment,
+      };
+      dataStore.addMessageToSession(sessionId, userMessage);
+
+      // Generate response
+      const messageCount = session.messages.length + 1;
+      const response = generateResponse(userIntent, session, messageCount);
+
+      // Add assistant message
+      const assistantMessage: Omit<ChatMessage, 'id' | 'timestamp'> = {
+        role: 'assistant',
+        content: response.content,
+        intent: response.intent,
+        sentiment: response.sentiment,
+      };
+      dataStore.addMessageToSession(sessionId, assistantMessage);
+
+      // Update session context
+      const updatedSession = dataStore.updateConversationalSession(sessionId, {
+        topicsDiscussed: [...session.topicsDiscussed, userIntent].filter((v, i, a) => a.indexOf(v) === i),
+        copingSkillsOffered: response.intent === 'coping-request' 
+          ? [...session.copingSkillsOffered, 'coping-skill']
+          : session.copingSkillsOffered,
+      });
+
+      // Check for escalation
+      const allMessages = [...session.messages, userMessage, assistantMessage];
+      const riskLevel = determineRiskLevel(allMessages as ChatMessage[]);
+      
+      const escalationNeeded = response.sentiment === 'alert' || riskLevel === 'critical';
+      
+      dataStore.updateConversationalSession(sessionId, {
+        currentRiskLevel: riskLevel,
+        escalationNeeded,
+      });
+
+      return NextResponse.json({
+        message: assistantMessage,
+        session: updatedSession,
+        riskLevel,
+        escalationNeeded,
+      });
+    }
+
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+  } catch (error) {
+    console.error('Error processing message:', error);
+    return NextResponse.json({ error: 'Failed to process message' }, { status: 500 });
+  }
+}
+
+// PATCH /api/conversational-agent - Complete session
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { sessionId, completed, parentNotified, notes } = body;
+
+    if (!sessionId) {
+      return NextResponse.json({ error: 'sessionId is required' }, { status: 400 });
+    }
+
+    const updates: Partial<ConversationalSession> = {
+      completedAt: completed ? new Date().toISOString() : undefined,
+      parentNotified: parentNotified ?? false,
+    };
+
+    if (notes) {
+      updates.context = { moodState: 'unknown' }; // Placeholder
+    }
+
+    const session = dataStore.updateConversationalSession(sessionId, updates);
+
+    if (!session) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(session);
+  } catch (error) {
+    console.error('Error completing session:', error);
+    return NextResponse.json({ error: 'Failed to complete session' }, { status: 500 });
+  }
+}
+
+// Helper functions
+function getWelcomeMessage(sessionType: SessionType): string {
+  const messages = {
+    triage: "Welcome! I'm Mindful Buddy, here to help you talk about how you're feeling.",
+    'check-in': "Hi there! Let's check in on how you're doing today.",
+    breathing: "Hello! Ready to practice some calming breathing exercises together?",
+    grounding: "Welcome! Let's do some exercises to help you feel more present and calm.",
+  };
+  return messages[sessionType] || messages['check-in'];
+}
+
+function getIntroMessage(sessionType: SessionType): string {
+  const messages = {
+    triage: "There's no right or wrong way to feel. I'm here to listen and help. How are you feeling right now?",
+    'check-in': "Take a moment to think about how you've been feeling lately. What mood words would you use?",
+    breathing: "Breathing exercises can help us feel calmer. Would you like to start with a simple exercise?",
+    grounding: "When we feel overwhelmed, grounding exercises can help us feel safer. Would you like to try one?",
+  };
+  return messages[sessionType] || messages['check-in'];
+}

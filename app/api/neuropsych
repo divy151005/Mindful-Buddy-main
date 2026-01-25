@@ -1,0 +1,308 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { dataStore } from '@/lib/data-store';
+import type { NeuropsychologicalResult, NeuropsychSubTest } from '@/lib/data-store';
+
+// Test types
+export type NeuropsychTestType = 
+  | 'attention' 
+  | 'memory' 
+  | 'executive-function' 
+  | 'language' 
+  | 'visual-motor' 
+  | 'comprehensive';
+
+// Test configurations
+const TEST_CONFIGS: Record<NeuropsychTestType, {
+  name: string;
+  description: string;
+  subTests: string[];
+  duration: number; // minutes
+}> = {
+  'attention': {
+    name: 'Attention Assessment',
+    description: 'Evaluates sustained attention, selective attention, and attention switching',
+    subTests: ['Continuous Performance Test', 'Trail Making Test A', 'Digit Span Forward', 'Cancellation Task'],
+    duration: 30,
+  },
+  'memory': {
+    name: 'Memory Assessment',
+    description: 'Evaluates verbal and visual memory, immediate and delayed recall',
+    subTests: ['Verbal List Learning', 'Visual Reproduction', 'Digit Span Backward', 'Spatial Memory'],
+    duration: 45,
+  },
+  'executive-function': {
+    name: 'Executive Function Assessment',
+    description: 'Evaluates cognitive flexibility, inhibitory control, and working memory',
+    subTests: ['Trail Making Test B', 'Stroop Test', 'Wisconsin Card Sorting', 'Tower of London'],
+    duration: 45,
+  },
+  'language': {
+    name: 'Language Assessment',
+    description: 'Evaluates receptive and expressive language abilities',
+    subTests: ['Vocabulary', 'Comprehension', 'Naming', 'Fluency'],
+    duration: 30,
+  },
+  'visual-motor': {
+    name: 'Visual-Motor Assessment',
+    description: 'Evaluates visual perception and motor coordination',
+    subTests: ['Bender Visual-Motor Gestalt', 'Rey-Osterrieth Complex Figure', 'Motor Speed'],
+    duration: 35,
+  },
+  'comprehensive': {
+    name: 'Comprehensive Neuropsychological Evaluation',
+    description: 'Full assessment covering all cognitive domains',
+    subTests: ['Attention', 'Memory', 'Executive Function', 'Language', 'Visual-Motor', 'Social-Emotional'],
+    duration: 120,
+  },
+};
+
+// Classification thresholds
+const CLASSIFICATION_THRESHOLDS = {
+  'above-average': { percentile: 75, scaledScore: 13 },
+  'average': { percentile: 25, scaledScore: 8 },
+  'below-average': { percentile: 10, scaledScore: 5 },
+};
+
+// Calculate scaled score from raw score
+function calculateScaledScore(
+  rawScore: number, 
+  mean: number, 
+  sd: number
+): number {
+  const zScore = (rawScore - mean) / sd;
+  return Math.round(8 + zScore * 3); // Mean of 8, SD of 3
+}
+
+// Calculate percentile from scaled score
+function calculatePercentile(scaledScore: number): number {
+  // Approximation of cumulative normal distribution
+  const zScore = (scaledScore - 8) / 3;
+  const percentile = (1 / (1 + Math.exp(-1.7 * zScore))) * 100;
+  return Math.round(Math.min(Math.max(percentile, 1), 99));
+}
+
+// Determine classification
+function determineClassification(percentile: number): 
+  'average' | 'above-average' | 'below-average' | 'impaired' {
+  if (percentile >= CLASSIFICATION_THRESHOLDS['above-average'].percentile) {
+    return 'above-average';
+  } else if (percentile >= CLASSIFICATION_THRESHOLDS['average'].percentile) {
+    return 'average';
+  } else if (percentile >= CLASSIFICATION_THRESHOLDS['below-average'].percentile) {
+    return 'below-average';
+  }
+  return 'impaired';
+}
+
+// Generate strengths and concerns based on sub-test scores
+function generateAnalysis(subTests: NeuropsychSubTest[]): {
+  strengths: string[];
+  concerns: string[];
+  recommendations: string[];
+} {
+  const strengths: string[] = [];
+  const concerns: string[] = [];
+  const recommendations: string[] = [];
+
+  subTests.forEach(test => {
+    if (test.scaledScore >= 12) {
+      strengths.push(`Strong performance in ${test.name}`);
+    } else if (test.scaledScore <= 6) {
+      concerns.push(`${test.name} may need support (scaled score: ${test.scaledScore})`);
+    }
+  });
+
+  // Generate recommendations based on concerns
+  concerns.forEach(concern => {
+    if (concern.toLowerCase().includes('attention')) {
+      recommendations.push('Consider behavioral interventions for attention');
+      recommendations.push('Evaluate need for ADHD assessment');
+    }
+    if (concern.toLowerCase().includes('memory')) {
+      recommendations.push('Implement memory support strategies');
+      recommendations.push('Consider memory training programs');
+    }
+    if (concern.toLowerCase().includes('executive')) {
+      recommendations.push('Executive function coaching recommended');
+      recommendations.push('Consider organizational support');
+    }
+    if (concern.toLowerCase().includes('language')) {
+      recommendations.push('Speech-language evaluation recommended');
+      recommendations.push('Language support in academic settings');
+    }
+    if (concern.toLowerCase().includes('visual') || concern.toLowerCase().includes('motor')) {
+      recommendations.push('Occupational therapy evaluation recommended');
+      recommendations.push('Fine motor support in classroom');
+    }
+  });
+
+  if (strengths.length === 0 && concerns.length === 0) {
+    strengths.push('Performance within average range across domains');
+  }
+
+  return { strengths, concerns, recommendations };
+}
+
+// GET /api/neuropsychological - Get neuropsychological results
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const childId = searchParams.get('childId');
+    const testType = searchParams.get('testType') as NeuropsychTestType | null;
+
+    let results = dataStore.getNeuropsychologicalResults(childId || undefined);
+
+    if (testType) {
+      results = results.filter(r => r.testType === testType);
+    }
+
+    // Include analysis for each result
+    const resultsWithAnalysis = results.map(result => {
+      const { strengths, concerns, recommendations } = generateAnalysis(result.subTests);
+      return {
+        ...result,
+        analysis: {
+          strengths,
+          concerns,
+          recommendations,
+        },
+      };
+    });
+
+    return NextResponse.json(resultsWithAnalysis);
+  } catch (error) {
+    console.error('Error fetching neuropsychological results:', error);
+    return NextResponse.json({ error: 'Failed to fetch neuropsychological results' }, { status: 500 });
+  }
+}
+
+// POST /api/neuropsychological - Create neuropsychological result
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const {
+      childId,
+      testType,
+      testName,
+      subTests,
+      assessorName,
+      assessorCredentials,
+    } = body;
+
+    if (!childId || !testType || !subTests || !Array.isArray(subTests)) {
+      return NextResponse.json({
+        error: 'childId, testType, and subTests array are required',
+      }, { status: 400 });
+    }
+
+    const config = TEST_CONFIGS[testType as NeuropsychTestType];
+    if (!config) {
+      return NextResponse.json({ error: 'Invalid test type' }, { status: 400 });
+    }
+
+    // Process sub-tests with scaled scores
+    const processedSubTests: NeuropsychSubTest[] = subTests.map((test: {
+      name: string;
+      rawScore: number;
+      mean?: number;
+      sd?: number;
+      description?: string;
+    }) => {
+      const mean = test.mean || 50; // Default mean
+      const sd = test.sd || 10; // Default SD
+      const scaledScore = calculateScaledScore(test.rawScore, mean, sd);
+      const percentile = calculatePercentile(scaledScore);
+
+      return {
+        name: test.name,
+        rawScore: test.rawScore,
+        scaledScore,
+        percentile,
+        description: test.description || `Assessment of ${test.name}`,
+      };
+    });
+
+    // Calculate overall scores
+    const avgScaledScore = processedSubTests.reduce((sum, t) => sum + t.scaledScore, 0) / processedSubTests.length;
+    const avgPercentile = processedSubTests.reduce((sum, t) => sum + t.percentile, 0) / processedSubTests.length;
+    const classification = determineClassification(avgPercentile);
+
+    // Generate analysis
+    const { strengths, concerns, recommendations } = generateAnalysis(processedSubTests);
+
+    const result = dataStore.createNeuropsychologicalResult({
+      childId,
+      testType,
+      testName: testName || config.name,
+      subTests: processedSubTests,
+      overallScore: Math.round(avgScaledScore * 10),
+      percentileRank: Math.round(avgPercentile),
+      classification,
+      strengths,
+      concerns,
+      recommendations,
+      assessorName,
+      assessorCredentials,
+      completedAt: new Date().toISOString(),
+    });
+
+    // Update progress tracking
+    dataStore.createProgressTrack({
+      childId,
+      area: 'cognitive',
+      skill: `neuropsych-${testType}`,
+      currentScore: Math.round(avgPercentile),
+      lastAssessed: new Date().toISOString(),
+    });
+
+    return NextResponse.json({
+      result,
+      analysis: {
+        strengths,
+        concerns,
+        recommendations,
+        interpretation: `${classification.charAt(0).toUpperCase() + classification.slice(1)} performance overall`,
+      },
+    }, { status: 201 });
+  } catch (error) {
+    console.error('Error creating neuropsychological result:', error);
+    return NextResponse.json({ error: 'Failed to create neuropsychological result' }, { status: 500 });
+  }
+}
+
+// GET /api/neuropsychological/config - Get test configurations
+export async function GET_CONFIG() {
+  try {
+    return NextResponse.json({
+      testTypes: Object.entries(TEST_CONFIGS).map(([type, config]) => ({
+        type,
+        ...config,
+      })),
+      interpretationGuide: {
+        'above-average': {
+          percentile: '75th percentile and above',
+          scaledScore: '13 and above',
+          description: 'Performance significantly above age expectations',
+        },
+        'average': {
+          percentile: '25th-74th percentile',
+          scaledScore: '8-12',
+          description: 'Performance within typical range',
+        },
+        'below-average': {
+          percentile: '10th-24th percentile',
+          scaledScore: '5-7',
+          description: 'Performance below age expectations, may benefit from support',
+        },
+        'impaired': {
+          percentile: 'Below 10th percentile',
+          scaledScore: 'Below 5',
+          description: 'Performance significantly below expectations, intervention recommended',
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching neuropsych config:', error);
+    return NextResponse.json({ error: 'Failed to fetch neuropsychological configuration' }, { status: 500 });
+  }
+}
