@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useApp } from "@/components/providers/app-provider"
 import { RefreshCw, TrendingUp, Heart, Lightbulb, CheckCircle, Video, Gamepad } from "lucide-react"
-import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, Cell } from "recharts"
+import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip, CartesianGrid } from "recharts"
 
 const moodColors: Record<string, string> = {
   excited: "#10b981",
@@ -16,16 +16,23 @@ const moodColors: Record<string, string> = {
 
 const moodLevels = ["anxious", "sad", "okay", "calm", "happy", "excited"]
 
+const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
 export default function DashboardPage() {
   const { moodEntries, sessionsCompleted, copingSkillsUsed } = useApp()
 
-  const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-  const chartData = moodEntries.slice(-7).map((entry, idx) => ({
-    day: weekDays[idx],
-    mood: moodLevels.indexOf(entry.mood) + 1,
-    color: moodColors[entry.mood],
-    label: entry.mood,
-  }))
+  // Use actual dates from mood entries to derive day names
+  const chartData = moodEntries.slice(-7).map((entry) => {
+    const date = new Date(entry.date)
+    const dayName = dayNames[date.getDay()]
+    return {
+      day: dayName,
+      mood: moodLevels.indexOf(entry.mood) + 1,
+      color: moodColors[entry.mood],
+      label: entry.mood.charAt(0).toUpperCase() + entry.mood.slice(1),
+      date: entry.date,
+    }
+  })
 
   const latestMood = moodEntries[moodEntries.length - 1]?.mood || "okay"
   const moodTrend = moodLevels.indexOf(latestMood) >= 3 ? "Positive" : "Needs Support"
@@ -119,19 +126,44 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground">How you&apos;ve been feeling this week</p>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
+            <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} barSize={40}>
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} />
+                <BarChart data={chartData} barSize={36} margin={{ top: 8, right: 8, bottom: 4, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
+                  <XAxis
+                    dataKey="day"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                  />
                   <YAxis
                     domain={[0, 6]}
                     ticks={[1, 2, 3, 4, 5, 6]}
-                    tickFormatter={(value) => moodLevels[value - 1] || ""}
+                    tickFormatter={(value) => {
+                      const mood = moodLevels[value - 1]
+                      return mood ? mood.charAt(0).toUpperCase() + mood.slice(1) : ""
+                    }}
                     axisLine={false}
                     tickLine={false}
-                    width={60}
+                    width={70}
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                   />
-                  <Bar dataKey="mood" radius={[8, 8, 0, 0]}>
+                  <Tooltip
+                    cursor={{ fill: "var(--muted)", opacity: 0.3, radius: 8 }}
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload
+                        return (
+                          <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg">
+                            <p className="text-sm font-semibold text-foreground">{data.label}</p>
+                            <p className="text-xs text-muted-foreground">{data.day} · {data.date}</p>
+                          </div>
+                        )
+                      }
+                      return null
+                    }}
+                  />
+                  <Bar dataKey="mood" radius={[8, 8, 0, 0]} animationDuration={800} animationEasing="ease-out">
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
