@@ -14,6 +14,9 @@ const games = [
     difficulty: "Easy to Hard",
     icon: Calculator,
     href: "/games/number-sequences",
+    iconBg: "bg-blue-500/15",
+    iconColor: "text-blue-600",
+    difficultyColor: "bg-blue-100 text-blue-700",
   },
   {
     id: "pattern-matching",
@@ -23,6 +26,9 @@ const games = [
     difficulty: "Easy to Medium",
     icon: Grid3X3,
     href: "/games/pattern-matching",
+    iconBg: "bg-purple-500/15",
+    iconColor: "text-purple-600",
+    difficultyColor: "bg-purple-100 text-purple-700",
   },
   {
     id: "memory-cards",
@@ -32,6 +38,9 @@ const games = [
     difficulty: "Easy to Hard",
     icon: Puzzle,
     href: "/games/memory-cards",
+    iconBg: "bg-amber-500/15",
+    iconColor: "text-amber-600",
+    difficultyColor: "bg-amber-100 text-amber-700",
   },
   {
     id: "shape-builder",
@@ -41,6 +50,9 @@ const games = [
     difficulty: "Medium",
     icon: Shapes,
     href: "/games/shape-builder",
+    iconBg: "bg-emerald-500/15",
+    iconColor: "text-emerald-600",
+    difficultyColor: "bg-emerald-100 text-emerald-700",
   },
   {
     id: "quick-math",
@@ -50,6 +62,9 @@ const games = [
     difficulty: "Adaptive",
     icon: Zap,
     href: "/games/quick-math",
+    iconBg: "bg-rose-500/15",
+    iconColor: "text-rose-600",
+    difficultyColor: "bg-rose-100 text-rose-700",
   },
   {
     id: "story-sequence",
@@ -59,41 +74,52 @@ const games = [
     difficulty: "Easy",
     icon: Lightbulb,
     href: "/games/story-sequence",
+    iconBg: "bg-cyan-500/15",
+    iconColor: "text-cyan-600",
+    difficultyColor: "bg-cyan-100 text-cyan-700",
   },
 ]
 
 export default function GamesPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 fade-in-up">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Brain Games</h1>
+        <h1 className="text-3xl font-bold text-foreground">
+          🧩 Brain Games
+        </h1>
         <p className="mt-2 text-muted-foreground">Fun games designed to assess and improve cognitive abilities.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {games.map((game) => {
+        {games.map((game, idx) => {
           const Icon = game.icon
           return (
-            <Card key={game.id} className="border-none shadow-sm transition-shadow hover:shadow-md">
+            <Card
+              key={game.id}
+              className="card-hover border-none shadow-sm overflow-hidden group"
+              style={{ animationDelay: `${idx * 80}ms` }}
+            >
               <CardHeader>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary">
-                  <Icon className="h-6 w-6 text-secondary-foreground" />
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${game.iconBg} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
+                  <Icon className={`h-6 w-6 ${game.iconColor}`} />
                 </div>
                 <CardTitle className="mt-3">{game.title}</CardTitle>
                 <CardDescription>{game.description}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between text-sm">
+                <div className="flex items-center justify-between text-sm">
                   <span>
                     <span className="font-medium text-foreground">Skill:</span>{" "}
                     <span className="text-muted-foreground">{game.skill}</span>
                   </span>
-                  <span className="text-muted-foreground">{game.difficulty}</span>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${game.difficultyColor}`}>
+                    {game.difficulty}
+                  </span>
                 </div>
-                <Button asChild className="w-full gap-2">
+                <Button asChild className="w-full gap-2 bg-gradient-to-r from-primary to-primary/85 shadow-sm hover:shadow-md transition-all duration-200">
                   <Link href={game.href}>
                     Play Game
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                   </Link>
                 </Button>
               </CardContent>

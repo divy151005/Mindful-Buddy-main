@@ -48,49 +48,75 @@ export default function DashboardPage() {
     },
   ]
 
+  const statCards = [
+    {
+      title: "Sessions Completed",
+      value: sessionsCompleted,
+      subtitle: "+2 since last week",
+      icon: RefreshCw,
+      gradient: "from-blue-500/10 to-cyan-500/10",
+      iconBg: "bg-blue-500/15",
+      iconColor: "text-blue-600",
+    },
+    {
+      title: "Mood Trend",
+      value: moodTrend,
+      subtitle: "Up by 15% this month",
+      icon: TrendingUp,
+      gradient: "from-emerald-500/10 to-teal-500/10",
+      iconBg: "bg-emerald-500/15",
+      iconColor: "text-emerald-600",
+      valueColor: "text-emerald-600",
+    },
+    {
+      title: "Coping Skills Practiced",
+      value: copingSkillsUsed.length,
+      subtitle: "Deep breathing was your most used skill",
+      icon: Heart,
+      gradient: "from-pink-500/10 to-rose-500/10",
+      iconBg: "bg-pink-500/15",
+      iconColor: "text-pink-600",
+    },
+  ]
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-foreground">Your Progress</h1>
+    <div className="space-y-6 fade-in-up">
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Your Progress</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Track your mental wellness journey</p>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-none shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Sessions Completed</CardTitle>
-            <RefreshCw className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-foreground">{sessionsCompleted}</div>
-            <p className="text-xs text-muted-foreground">+2 since last week</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Mood Trend</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-accent">{moodTrend}</div>
-            <p className="text-xs text-muted-foreground">Up by 15% this month</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Coping Skills Practiced</CardTitle>
-            <Heart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-foreground">{copingSkillsUsed.length}</div>
-            <p className="text-xs text-muted-foreground">Deep breathing was your most used skill</p>
-          </CardContent>
-        </Card>
+        {statCards.map((card, idx) => {
+          const Icon = card.icon
+          return (
+            <Card
+              key={idx}
+              className={`card-hover border-none shadow-sm overflow-hidden bg-gradient-to-br ${card.gradient}`}
+              style={{ animationDelay: `${idx * 100}ms` }}
+            >
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
+                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${card.iconBg}`}>
+                  <Icon className={`h-4 w-4 ${card.iconColor}`} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-3xl font-bold ${card.valueColor || "text-foreground"}`}>
+                  {card.value}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">{card.subtitle}</p>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
-        <Card className="border-none shadow-sm lg:col-span-3">
+        <Card className="card-hover border-none shadow-sm lg:col-span-3 gradient-border-top overflow-hidden">
           <CardHeader>
             <CardTitle className="text-xl font-bold">Weekly Mood Overview</CardTitle>
+            <p className="text-sm text-muted-foreground">How you&apos;ve been feeling this week</p>
           </CardHeader>
           <CardContent>
             <div className="h-64">
@@ -116,23 +142,30 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm lg:col-span-2">
+        <Card className="card-hover border-none shadow-sm lg:col-span-2 gradient-border-top overflow-hidden">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-warning" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15">
+                <Lightbulb className="h-5 w-5 text-amber-600" />
+              </div>
               <CardTitle className="text-xl font-bold">For You</CardTitle>
             </div>
             <p className="text-sm text-muted-foreground">
               Based on your recent chats, here are some things you might like.
             </p>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {recommendations.map((rec, idx) => (
-              <div key={idx} className="flex items-start gap-3">
-                <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+              <div
+                key={idx}
+                className="flex items-start gap-3 rounded-xl p-3 transition-colors duration-200 hover:bg-muted/50 cursor-pointer"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/20 mt-0.5">
+                  <CheckCircle className="h-4 w-4 text-accent" />
+                </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">{rec.title}</p>
-                  <p className="text-xs text-muted-foreground">{rec.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{rec.description}</p>
                 </div>
               </div>
             ))}

@@ -14,6 +14,9 @@ const assessments = [
     icon: ClipboardCheck,
     href: "/assessments/psc",
     ageRange: "4-16 years",
+    iconBg: "bg-blue-500/15",
+    iconColor: "text-blue-600",
+    ageBadgeColor: "bg-blue-100 text-blue-700",
   },
   {
     id: "asq",
@@ -23,6 +26,9 @@ const assessments = [
     icon: Baby,
     href: "/assessments/asq",
     ageRange: "1-66 months",
+    iconBg: "bg-pink-500/15",
+    iconColor: "text-pink-600",
+    ageBadgeColor: "bg-pink-100 text-pink-700",
   },
   {
     id: "peds",
@@ -32,6 +38,9 @@ const assessments = [
     icon: Users,
     href: "/assessments/peds",
     ageRange: "0-8 years",
+    iconBg: "bg-amber-500/15",
+    iconColor: "text-amber-600",
+    ageBadgeColor: "bg-amber-100 text-amber-700",
   },
   {
     id: "mchat",
@@ -43,6 +52,9 @@ const assessments = [
     href: "/assessments/mchat",
     ageRange: "16-30 months",
     featured: true,
+    iconBg: "bg-violet-500/15",
+    iconColor: "text-violet-600",
+    ageBadgeColor: "bg-violet-100 text-violet-700",
   },
   {
     id: "neuropsych",
@@ -52,6 +64,9 @@ const assessments = [
     icon: Brain,
     href: "/assessments/neuropsych",
     ageRange: "5+ years",
+    iconBg: "bg-emerald-500/15",
+    iconColor: "text-emerald-600",
+    ageBadgeColor: "bg-emerald-100 text-emerald-700",
   },
   {
     id: "iq-game",
@@ -62,6 +77,9 @@ const assessments = [
     icon: Gamepad2,
     href: "/games/number-sequences",
     ageRange: "5+ years",
+    iconBg: "bg-cyan-500/15",
+    iconColor: "text-cyan-600",
+    ageBadgeColor: "bg-cyan-100 text-cyan-700",
   },
   {
     id: "psychiatric",
@@ -71,12 +89,15 @@ const assessments = [
     icon: FileText,
     href: "/assessments/psychiatric",
     ageRange: "All ages",
+    iconBg: "bg-rose-500/15",
+    iconColor: "text-rose-600",
+    ageBadgeColor: "bg-rose-100 text-rose-700",
   },
 ]
 
 export default function AssessmentsPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 fade-in-up">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Mental Health Assessments</h1>
         <p className="mt-2 text-muted-foreground">
@@ -85,24 +106,24 @@ export default function AssessmentsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {assessments.map((assessment) => {
+        {assessments.map((assessment, idx) => {
           const Icon = assessment.icon
           return (
             <Card
               key={assessment.id}
-              className={`border-none shadow-sm transition-shadow hover:shadow-md ${
-                assessment.featured ? "ring-2 ring-primary" : ""
-              }`}
+              className={`card-hover border-none shadow-sm overflow-hidden group transition-all duration-300 ${assessment.featured ? "ring-2 ring-primary/40 pulse-glow" : ""
+                }`}
+              style={{ animationDelay: `${idx * 80}ms` }}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
-                      <Icon className="h-5 w-5 text-secondary-foreground" />
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${assessment.iconBg} transition-transform duration-300 group-hover:scale-110`}>
+                      <Icon className={`h-5 w-5 ${assessment.iconColor}`} />
                     </div>
                     {assessment.featured && (
-                      <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                        Featured
+                      <span className="rounded-full bg-gradient-to-r from-primary/20 to-accent/20 px-2.5 py-1 text-xs font-semibold text-primary">
+                        ✨ Featured
                       </span>
                     )}
                   </div>
@@ -111,17 +132,19 @@ export default function AssessmentsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">{assessment.description}</p>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <p className="text-sm">
                     <span className="font-medium text-foreground">Best for:</span>{" "}
                     <span className="text-muted-foreground">{assessment.bestFor}</span>
                   </p>
-                  <p className="text-xs text-muted-foreground">Age range: {assessment.ageRange}</p>
+                  <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${assessment.ageBadgeColor}`}>
+                    {assessment.ageRange}
+                  </span>
                 </div>
-                <Button asChild className="w-full gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                <Button asChild className="w-full gap-2 bg-gradient-to-r from-primary to-primary/85 shadow-sm hover:shadow-md transition-all duration-200">
                   <Link href={assessment.href}>
                     Start Assessment
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                   </Link>
                 </Button>
               </CardContent>

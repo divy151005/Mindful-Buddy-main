@@ -125,7 +125,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col">
+    <div className="flex h-[calc(100vh-8rem)] flex-col fade-in-up">
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-foreground">Chat with Mindful Buddy</h1>
         <p className="text-sm text-muted-foreground">
@@ -135,15 +135,26 @@ export default function ChatPage() {
 
       <Card className="flex flex-1 flex-col overflow-hidden border-none shadow-sm">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message) => (
+          {messages.map((message, idx) => (
             <div
               key={message.id}
-              className={cn("flex gap-3", message.role === "user" ? "flex-row-reverse" : "flex-row")}
+              className={cn(
+                "flex gap-3",
+                message.role === "user" ? "flex-row-reverse slide-in-right" : "flex-row slide-in-left",
+              )}
+              style={{ animationDelay: `${idx * 50}ms` }}
             >
-              <Avatar className="h-8 w-8 shrink-0">
+              <Avatar
+                className={cn(
+                  "h-8 w-8 shrink-0",
+                  message.role === "assistant" && "pulse-glow",
+                )}
+              >
                 <AvatarFallback
                   className={cn(
-                    message.role === "user" ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground",
+                    message.role === "user"
+                      ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground"
+                      : "bg-gradient-to-br from-accent to-accent/80 text-accent-foreground",
                   )}
                 >
                   {message.role === "user" ? childProfile?.name?.charAt(0) || "U" : <Brain className="h-4 w-4" />}
@@ -151,8 +162,10 @@ export default function ChatPage() {
               </Avatar>
               <div
                 className={cn(
-                  "max-w-[75%] rounded-2xl px-4 py-3 text-sm",
-                  message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
+                  "max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed",
+                  message.role === "user"
+                    ? "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground shadow-md"
+                    : "bg-muted text-foreground shadow-sm",
                 )}
               >
                 {message.content}
@@ -161,25 +174,25 @@ export default function ChatPage() {
           ))}
 
           {isTyping && (
-            <div className="flex gap-3">
-              <Avatar className="h-8 w-8 shrink-0">
-                <AvatarFallback className="bg-accent text-accent-foreground">
+            <div className="flex gap-3 slide-in-left">
+              <Avatar className="h-8 w-8 shrink-0 pulse-glow">
+                <AvatarFallback className="bg-gradient-to-br from-accent to-accent/80 text-accent-foreground">
                   <Brain className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
-              <div className="rounded-2xl bg-muted px-4 py-3">
-                <div className="flex gap-1">
+              <div className="rounded-2xl bg-muted px-4 py-3 shadow-sm">
+                <div className="flex gap-1.5">
                   <span
-                    className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground"
-                    style={{ animationDelay: "0ms" }}
+                    className="h-2 w-2 rounded-full bg-muted-foreground/60"
+                    style={{ animation: "bounce-dot 1.4s infinite", animationDelay: "0ms" }}
                   />
                   <span
-                    className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground"
-                    style={{ animationDelay: "150ms" }}
+                    className="h-2 w-2 rounded-full bg-muted-foreground/60"
+                    style={{ animation: "bounce-dot 1.4s infinite", animationDelay: "200ms" }}
                   />
                   <span
-                    className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground"
-                    style={{ animationDelay: "300ms" }}
+                    className="h-2 w-2 rounded-full bg-muted-foreground/60"
+                    style={{ animation: "bounce-dot 1.4s infinite", animationDelay: "400ms" }}
                   />
                 </div>
               </div>
@@ -189,7 +202,7 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="border-t border-border bg-card p-4">
+        <div className="border-t border-border/50 glass p-4">
           <div className="mb-3 flex flex-wrap gap-2">
             {quickResponses.map((response) => {
               const Icon = response.icon
@@ -199,9 +212,9 @@ export default function ChatPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => handleSend(response.label)}
-                  className="gap-2"
+                  className="gap-2 rounded-full border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary/40 transition-all duration-200 hover:scale-105"
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-3.5 w-3.5" />
                   {response.label}
                 </Button>
               )
@@ -219,9 +232,14 @@ export default function ChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type your message..."
-              className="flex-1"
+              className="flex-1 rounded-full border-border/50 bg-background/80 px-4"
             />
-            <Button type="submit" size="icon" disabled={!input.trim()}>
+            <Button
+              type="submit"
+              size="icon"
+              disabled={!input.trim()}
+              className="rounded-full bg-gradient-to-r from-primary to-primary/80 shadow-md transition-all duration-200 hover:scale-110 hover:shadow-lg disabled:opacity-40"
+            >
               <Send className="h-4 w-4" />
               <span className="sr-only">Send message</span>
             </Button>
