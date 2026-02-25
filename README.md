@@ -28,4 +28,8 @@ Continue building your app on:
 2. Deploy your chats from the v0 interface
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
-5. OCD 
+5. OCD
+
+## Screenshot
+
+![Mindful Buddy Dashboard](./public/Screenshot%202026-02-25%20221447.png)
