@@ -85,7 +85,7 @@ export default function PSCPage() {
   }
 
   const calculateResults = () => {
-    const totalScore = answers.reduce((sum, a) => sum + (a || 0), 0)
+    const totalScore = answers.reduce<number>((sum, a) => sum + (a || 0), 0)
 
     // Attention subscale (items 4, 7, 8, 9, 14)
     const attentionItems = [3, 6, 7, 8, 13]
