@@ -11,7 +11,8 @@
 
 **Mindful Buddy** is a Next.js web app for early child mental health screening, caregiver guidance, and structured follow-up. It combines screening tools, AI-style result explanations, progress tracking, therapeutic games, and specialist consultation flows into one caregiver-friendly workspace.
 
-![Mindful Buddy Dashboard](./public/Screenshot%202026-02-25%20221447.png)
+<img width="1470" height="835" alt="Screenshot 2026-03-23 at 11 00 46 AM" src="https://github.com/user-attachments/assets/ceffd507-3387-4fd5-b843-3f0d4d0efaf3" />
+
 
 </div>
 
