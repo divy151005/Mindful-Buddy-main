@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { MessageCircle, LayoutDashboard, ClipboardList, BookOpen, Mail, Settings, Brain, Gamepad2 } from "lucide-react"
+import { MessageCircle, LayoutDashboard, ClipboardList, BookOpen, Mail, Settings, Brain, Gamepad2, ShieldCheck } from "lucide-react"
 
 const navItems = [
   { href: "/chat", label: "Chat", icon: MessageCircle },
@@ -18,15 +18,18 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar">
-      <div className="flex items-center gap-3 border-b border-sidebar-border p-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-md">
+    <aside className="sidebar-surface flex h-screen w-72 flex-col border-r border-sidebar-border/70 px-4 py-4">
+      <div className="pro-panel flex items-center gap-3 rounded-2xl px-4 py-4">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-md">
           <Brain className="h-5 w-5 text-primary-foreground" />
         </div>
-        <span className="text-xl font-bold gradient-text">Mindful Buddy</span>
+        <div>
+          <p className="text-lg font-bold gradient-text">Mindful Buddy</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Child wellness platform</p>
+        </div>
       </div>
 
-      <nav className="flex-1 space-y-1 p-4">
+      <nav className="flex-1 space-y-1 px-2 py-5">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
@@ -36,9 +39,9 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "group flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200",
+                "group relative flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-primary/10 text-primary shadow-sm"
+                  ? "pro-panel bg-primary/8 text-primary"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground hover:translate-x-0.5",
               )}
             >
@@ -61,13 +64,22 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-sidebar-border p-4">
+      <div className="px-2 pb-3">
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4 text-sm text-emerald-800 shadow-sm">
+          <div className="flex items-start gap-2">
+            <ShieldCheck className="mt-0.5 h-4 w-4" />
+            Assessment and profile flows are organized for caregiver-friendly guidance.
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-sidebar-border/70 p-2">
         <Link
           href="/settings"
           className={cn(
-            "group flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200",
+            "group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200",
             pathname === "/settings"
-              ? "bg-primary/10 text-primary shadow-sm"
+              ? "pro-panel bg-primary/8 text-primary"
               : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground hover:translate-x-0.5",
           )}
         >
@@ -85,8 +97,8 @@ export function Sidebar() {
         </Link>
       </div>
 
-      <div className="border-t border-sidebar-border px-6 py-3">
-        <p className="text-xs text-muted-foreground/60 text-center">v1.0.0 · Made with 💜</p>
+      <div className="border-t border-sidebar-border/70 px-4 py-3">
+        <p className="text-center text-xs text-muted-foreground/70">v1.0.0 · Professional caregiver workspace</p>
       </div>
     </aside>
   )

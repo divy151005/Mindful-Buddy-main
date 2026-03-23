@@ -315,6 +315,33 @@ interface ProgressAnalytics {
   generatedAt: string;
 }
 
+interface DoctorProfile {
+  id: string;
+  name: string;
+  specialization: string;
+  rating: number;
+  experienceYears: number;
+  languages: string[];
+  modes: Array<'chat' | 'appointment'>;
+  bio: string;
+  nextAvailable: string;
+  createdAt: string;
+}
+
+interface ConsultationRequest {
+  id: string;
+  childId: string;
+  assessmentId: string;
+  doctorId: string;
+  mode: 'chat' | 'appointment';
+  parentNote?: string;
+  preferredDate?: string;
+  status: 'pending' | 'scheduled' | 'completed';
+  reportSnapshot: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface DataStore {
   childProfiles: ChildProfile[];
   assessmentResults: AssessmentResult[];
@@ -333,30 +360,38 @@ interface DataStore {
   developmentScreenings: DevelopmentScreeningResult[];
   psychiatricEvaluations: PsychiatricEvaluationSummary[];
   progressAnalytics: ProgressAnalytics[];
+  doctors: DoctorProfile[];
+  consultationRequests: ConsultationRequest[];
 }
 
 const DATA_FILE = path.join(process.cwd(), 'data.json');
 
 class JSONDataStore {
-  private data: DataStore = {
-    childProfiles: [],
-    assessmentResults: [],
-    gameResults: [],
-    moodEntries: [],
-    sessions: [],
-    copingSkills: [],
-    iqTestResults: [],
-    mchatResults: [],
-    progressTracking: [],
-    iqGameSessions: [],
-    mchatVisualSessions: [],
-    conversationalSessions: [],
-    parentTeacherFeedback: [],
-    neuropsychologicalResults: [],
-    developmentScreenings: [],
-    psychiatricEvaluations: [],
-    progressAnalytics: [],
-  };
+  private createEmptyData(): DataStore {
+    return {
+      childProfiles: [],
+      assessmentResults: [],
+      gameResults: [],
+      moodEntries: [],
+      sessions: [],
+      copingSkills: [],
+      iqTestResults: [],
+      mchatResults: [],
+      progressTracking: [],
+      iqGameSessions: [],
+      mchatVisualSessions: [],
+      conversationalSessions: [],
+      parentTeacherFeedback: [],
+      neuropsychologicalResults: [],
+      developmentScreenings: [],
+      psychiatricEvaluations: [],
+      progressAnalytics: [],
+      doctors: [],
+      consultationRequests: [],
+    };
+  }
+
+  private data: DataStore = this.createEmptyData();
 
   constructor() {
     this.loadData();
@@ -366,7 +401,12 @@ class JSONDataStore {
     try {
       if (fs.existsSync(DATA_FILE)) {
         const fileContent = fs.readFileSync(DATA_FILE, 'utf-8');
-        this.data = JSON.parse(fileContent);
+        const parsed = JSON.parse(fileContent);
+        this.data = {
+          ...this.createEmptyData(),
+          ...parsed,
+        };
+        this.seedDoctors();
       } else {
         // Initialize with sample data
         this.initializeSampleData();
@@ -422,6 +462,54 @@ class JSONDataStore {
 
     this.data.sessions = [
       { id: 'session_1', childId: 'profile_1', type: 'assessment', duration: 30, completedAt: now, createdAt: now },
+    ];
+
+    this.seedDoctors();
+  }
+
+  private seedDoctors() {
+    if (this.data.doctors.length > 0) {
+      return;
+    }
+
+    const now = new Date().toISOString();
+    this.data.doctors = [
+      {
+        id: 'doctor_1',
+        name: 'Dr. Maya Thompson',
+        specialization: 'Developmental Pediatrician',
+        rating: 4.9,
+        experienceYears: 12,
+        languages: ['English', 'Hindi'],
+        modes: ['chat', 'appointment'],
+        bio: 'Focuses on early developmental screening, autism evaluations, and parent coaching.',
+        nextAvailable: '2026-03-25T10:30:00.000Z',
+        createdAt: now,
+      },
+      {
+        id: 'doctor_2',
+        name: 'Dr. Ethan Rivera',
+        specialization: 'Child Psychologist',
+        rating: 4.8,
+        experienceYears: 9,
+        languages: ['English', 'Spanish'],
+        modes: ['chat', 'appointment'],
+        bio: 'Supports social communication concerns, behavior regulation, and structured follow-up plans.',
+        nextAvailable: '2026-03-26T14:00:00.000Z',
+        createdAt: now,
+      },
+      {
+        id: 'doctor_3',
+        name: 'Dr. Priya Menon',
+        specialization: 'Pediatric Neurologist',
+        rating: 4.7,
+        experienceYears: 15,
+        languages: ['English'],
+        modes: ['appointment'],
+        bio: 'Handles complex neurodevelopmental referrals and coordinates multidisciplinary care.',
+        nextAvailable: '2026-03-28T09:00:00.000Z',
+        createdAt: now,
+      },
     ];
   }
 
@@ -863,6 +951,39 @@ class JSONDataStore {
       periodEnd: endDate.toISOString(),
     };
   }
+
+  // Doctors
+  getDoctors() {
+    return this.data.doctors;
+  }
+
+  getDoctor(id: string) {
+    return this.data.doctors.find((doctor) => doctor.id === id);
+  }
+
+  // Consultation Requests
+  getConsultationRequests(childId?: string) {
+    if (childId) {
+      return this.data.consultationRequests.filter((request) => request.childId === childId);
+    }
+    return this.data.consultationRequests;
+  }
+
+  createConsultationRequest(
+    request: Omit<ConsultationRequest, 'id' | 'createdAt' | 'updatedAt' | 'status'>,
+  ) {
+    const now = new Date().toISOString();
+    const newRequest: ConsultationRequest = {
+      ...request,
+      id: `consult_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.data.consultationRequests.push(newRequest);
+    this.saveData();
+    return newRequest;
+  }
 }
 
 // Export singleton instance
@@ -890,4 +1011,6 @@ export type {
   PsychiatricEvaluationSummary,
   IQGameResult,
   ProgressAnalytics,
+  DoctorProfile,
+  ConsultationRequest,
 };

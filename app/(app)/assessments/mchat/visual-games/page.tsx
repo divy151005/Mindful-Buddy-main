@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { ArrowLeft, Eye, Star, RefreshCw, Volume2 } from "lucide-react"
+import { ArrowLeft, Eye, Sparkles, Star, RefreshCw, Volume2 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
@@ -73,20 +73,36 @@ export default function MChatVisualGamesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/assessments/mchat">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">M-CHAT Visual Games</h1>
-          <p className="text-sm text-muted-foreground">
-            Interactive games to help observe your child&apos;s developmental skills
-          </p>
+    <div className="space-y-6 fade-in-up">
+      <section className="rounded-[2rem] border border-border/60 bg-gradient-to-br from-slate-50 via-white to-sky-50 shadow-sm">
+        <div className="grid gap-6 px-6 py-7 md:px-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Link href="/assessments/mchat">
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary shadow-sm">
+                <Sparkles className="h-3.5 w-3.5" />
+                Observation Games
+              </span>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">M-CHAT visual observation games</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Use guided mini-games to observe tracking, pointing, emotional recognition, and basic developmental responses in a more interactive format.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <GameStat label="Games" value="4" />
+            <GameStat label="Use case" value="Observation support" />
+            <GameStat label="Save style" value="Quick notes" />
+          </div>
         </div>
-      </div>
+      </section>
 
       <div className="grid gap-4 md:grid-cols-2">
         {games.map((game) => {
@@ -97,7 +113,7 @@ export default function MChatVisualGamesPage() {
             <Card
               key={game.id}
               className={cn(
-                "cursor-pointer border-none shadow-sm transition-all hover:shadow-md",
+                "cursor-pointer border border-border/60 bg-white/90 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
                 completed && "ring-2 ring-accent",
               )}
               onClick={() => setSelectedGame(game.id)}
@@ -128,7 +144,7 @@ export default function MChatVisualGamesPage() {
       </div>
 
       {results.length > 0 && (
-        <Card className="border-none shadow-sm">
+        <Card className="border border-border/60 bg-white/90 shadow-sm">
           <CardHeader>
             <CardTitle>Game Results Summary</CardTitle>
           </CardHeader>
@@ -153,6 +169,15 @@ export default function MChatVisualGamesPage() {
           </CardContent>
         </Card>
       )}
+    </div>
+  )
+}
+
+function GameStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className="mt-3 text-lg font-semibold text-foreground">{value}</p>
     </div>
   )
 }
